@@ -42,22 +42,16 @@ root.render(
             
             {/* Community Routes - Protected */}
             <Route path="/Community" element={
-              <ProtectedRoute>
                 <Community />
-              </ProtectedRoute>
             } />
             
             {/* Create Profile Route - Directed after Registration */}
             <Route path="/Community/Create-Profile" element={
-              <ProtectedRoute>
                 <CreateProfile />
-              </ProtectedRoute>
             } />
             
             <Route path="/Community/profile" element={
-              <ProtectedRoute>
                 <ProfileCard />
-              </ProtectedRoute>
             } />
           </Routes>
     </BrowserRouter>
