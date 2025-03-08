@@ -1,594 +1,1051 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Users, MessageSquare, Hash, Bell, User, Settings, ChevronRight, Send, Image, Smile, Paperclip } from 'lucide-react';
-import "./styles/BookClubNetwork.css";
+import React, { useState, useRef } from 'react';
+import { Search, Plus, Users, MessageSquare, Hash, Bell, User, Settings, ChevronRight, Send, Image, Smile, Paperclip, BarChart2, Reply, X, Upload, Info, Calendar } from 'lucide-react';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import "./styles/Community.css";
+
 const Community = () => {
   // State variables
-  const [activeTab, setActiveTab] = useState('chats'); // 'chats' or 'communities'
-  const [activeChat, setActiveChat] = useState(null);
+  const [activeTab, setActiveTab] = useState('chats');
+  const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newGroupModal, setNewGroupModal] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newChannelModal, setNewChannelModal] = useState(false);
-  const [newChannelName, setNewChannelName] = useState('');
-
-  // Mock data - would come from localStorage or backend in a real app
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Sarah Johnson', avatar: '/api/placeholder/40/40', status: 'online', following: true },
-    { id: 2, name: 'Mark Davies', avatar: '/api/placeholder/40/40', status: 'online', following: true },
-    { id: 3, name: 'Priya Sharma', avatar: '/api/placeholder/40/40', status: 'offline', following: true },
-    { id: 4, name: 'Tom Wilson', avatar: '/api/placeholder/40/40', status: 'online', following: false },
-    { id: 5, name: 'Emma Chen', avatar: '/api/placeholder/40/40', status: 'offline', following: true },
-  ]);
-
-  const [groups, setGroups] = useState([
-    { id: 1, name: 'Mystery Lovers Book Club', avatar: '/api/placeholder/40/40', type: 'group', unread: 3, lastMessage: { text: 'Has anyone read "The Silent Patient"?', time: '10:30 AM', sender: 'Mark Davies' } },
-    { id: 2, name: 'Sci-Fi Enthusiasts', avatar: '/api/placeholder/40/40', type: 'group', unread: 0, lastMessage: { text: 'The next meeting is on Friday!', time: 'Yesterday', sender: 'You' } },
-  ]);
-
-  const [channels, setChannels] = useState([
-    { id: 1, name: 'New Releases', avatar: '/api/placeholder/40/40', type: 'channel', unread: 5, lastMessage: { text: 'Check out these books coming out in March!', time: '11:45 AM', sender: 'Admin' } },
-    { id: 2, name: 'Book Recommendations', avatar: '/api/placeholder/40/40', type: 'channel', unread: 0, lastMessage: { text: '"Project Hail Mary" is a must-read!', time: 'Yesterday', sender: 'Sarah Johnson' } },
-    { id: 3, name: 'Reading Challenges', avatar: '/api/placeholder/40/40', type: 'channel', unread: 2, lastMessage: { text: 'New summer reading challenge announced!', time: '2 days ago', sender: 'Admin' } },
-  ]);
-
-  const [privateChats, setPrivateChats] = useState([
-    { id: 1, user: users[0], unread: 2, lastMessage: { text: 'Would you like to join our book club?', time: '9:15 AM', sender: 'Sarah Johnson' } },
-    { id: 2, user: users[2], unread: 0, lastMessage: { text: 'I really enjoyed that recommendation!', time: 'Yesterday', sender: 'You' } },
-  ]);
-
-  const [messages, setMessages] = useState({
-    // Private chat messages
-    'private-1': [
-      { id: 1, text: 'Hi there! Have you read any good books lately?', sender: users[0], time: '9:00 AM', status: 'read' },
-      { id: 2, text: 'I just finished "The Midnight Library". It was fantastic!', sender: { id: 0, name: 'You' }, time: '9:05 AM', status: 'read' },
-      { id: 3, text: 'Oh, I love Matt Haig! Would you like to join our book club?', sender: users[0], time: '9:15 AM', status: 'read' },
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedGroupDetails, setSelectedGroupDetails] = useState(null);
+  const [showGroupDetails, setShowGroupDetails] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // Add messages state
+  const [chatMessages, setChatMessages] = useState({
+    'Sarah Johnson': [
+      { 
+        id: 1, 
+        text: 'Would you like to join our book club?', 
+        sender: 'Sarah Johnson', 
+        time: '9:15 AM',
+        reactions: []
+      }
     ],
-    'private-2': [
-      { id: 1, text: 'Thanks for recommending "Educated". I couldn\'t put it down!', sender: users[2], time: 'Yesterday 5:30 PM', status: 'read' },
-      { id: 2, text: 'I really enjoyed that recommendation!', sender: { id: 0, name: 'You' }, time: 'Yesterday 6:45 PM', status: 'read' },
+    'Priya Sharma': [
+      { 
+        id: 1, 
+        text: 'I really enjoyed that recommendation!', 
+        sender: 'Priya Sharma', 
+        time: 'Yesterday',
+        reactions: []
+      }
     ],
-    // Group chat messages
-    'group-1': [
-      { id: 1, text: 'Welcome everyone to our Mystery Lovers Book Club!', sender: users[0], time: 'Yesterday 2:30 PM', status: 'read' },
-      { id: 2, text: 'I\'m currently reading "The Girl on the Train". Anyone else read it?', sender: users[2], time: 'Yesterday 3:15 PM', status: 'read' },
-      { id: 3, text: 'Yes! The unreliable narrator technique was so well done.', sender: { id: 0, name: 'You' }, time: 'Yesterday 4:20 PM', status: 'read' },
-      { id: 4, text: 'Has anyone read "The Silent Patient"?', sender: users[1], time: '10:30 AM', status: 'read' },
+    'Mystery Lovers Book Club': [
+      { 
+        id: 1, 
+        text: 'Has anyone read "The Silent Patient"?', 
+        sender: 'Mark Davies', 
+        time: '10:30 AM',
+        reactions: []
+      }
     ],
-    'group-2': [
-      { id: 1, text: 'What did everyone think of the latest Dune book?', sender: users[4], time: '2 days ago 10:15 AM', status: 'read' },
-      { id: 2, text: 'The worldbuilding is incredible!', sender: users[1], time: '2 days ago 11:30 AM', status: 'read' },
-      { id: 3, text: 'The next meeting is on Friday!', sender: { id: 0, name: 'You' }, time: 'Yesterday 1:45 PM', status: 'read' },
-    ],
-    // Channel messages
-    'channel-1': [
-      { id: 1, text: 'Here are some exciting new releases for this month:', sender: { id: 'admin', name: 'Admin' }, time: '2 days ago 9:00 AM', status: 'read' },
-      { id: 2, text: '1. "The Invisible Life of Addie LaRue" by V.E. Schwab', sender: { id: 'admin', name: 'Admin' }, time: '2 days ago 9:01 AM', status: 'read' },
-      { id: 3, text: '2. "Klara and the Sun" by Kazuo Ishiguro', sender: { id: 'admin', name: 'Admin' }, time: '2 days ago 9:02 AM', status: 'read' },
-      { id: 4, text: 'Check out these books coming out in March!', sender: { id: 'admin', name: 'Admin' }, time: '11:45 AM', status: 'read' },
-    ],
+    'Sci-Fi Enthusiasts': [
+      { 
+        id: 1, 
+        text: 'The next meeting is on Friday!', 
+        sender: 'Admin', 
+        time: 'Yesterday',
+        reactions: []
+      }
+    ]
   });
 
-  // Handle sending a new message
-  const handleSendMessage = () => {
-    if (!message.trim() || !activeChat) return;
+  // Add groups state
+  const [groups, setGroups] = useState({
+    chats: [
+      {
+        id: 1,
+        name: "Book Club Reading Group",
+        description: "Weekly book discussions and reading sessions",
+        members: [
+          { id: 1, name: "Sarah Johnson", role: "admin" },
+          { id: 2, name: "You", role: "member", active: true },
+        ],
+        image: null
+      }
+    ],
+    communities: [
+      {
+        id: 2,
+        name: "Mystery Lovers Book Club",
+        description: "A community for mystery book enthusiasts",
+        members: [
+          { id: 1, name: "Mark Davies", role: "admin" },
+          { id: 3, name: "You", role: "member", active: true },
+        ],
+        image: null
+      }
+    ]
+  });
 
-    const chatId = 
-      activeChat.type === 'private' ? `private-${activeChat.id}` : 
-      activeChat.type === 'group' ? `group-${activeChat.id}` : 
-      `channel-${activeChat.id}`;
+  // Add the handleUpdateGroup function
+  const handleUpdateGroup = (updatedGroup) => {
+    setGroups(prev => ({
+      chats: prev.chats.map(g => g.id === updatedGroup.id ? updatedGroup : g),
+      communities: prev.communities.map(g => g.id === updatedGroup.id ? updatedGroup : g)
+    }));
+  };
+
+  // Handle chat selection
+  const handleChatClick = (chatName) => {
+    setSelectedChat(chatName);
+    setShowEmojiPicker(false);
+  };
+
+  // Handle message send
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!message.trim() && !replyingTo) return;
 
     const newMessage = {
-      id: messages[chatId] ? messages[chatId].length + 1 : 1,
+      id: Date.now(),
       text: message,
-      sender: { id: 0, name: 'You' },
+      sender: 'You',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent'
+      reactions: [],
+      replyTo: replyingTo
     };
 
-    // Update messages
-    setMessages(prev => ({
+    setChatMessages(prev => ({
       ...prev,
-      [chatId]: prev[chatId] ? [...prev[chatId], newMessage] : [newMessage]
+      [selectedChat]: [...(prev[selectedChat] || []), newMessage]
     }));
 
-    // Update last message in the chat list
-    if (activeChat.type === 'private') {
-      setPrivateChats(prev => prev.map(chat => 
-        chat.id === activeChat.id ? 
-        { ...chat, lastMessage: { text: message, time: 'Just now', sender: 'You' }, unread: 0 } : 
-        chat
-      ));
-    } else if (activeChat.type === 'group') {
-      setGroups(prev => prev.map(group => 
-        group.id === activeChat.id ? 
-        { ...group, lastMessage: { text: message, time: 'Just now', sender: 'You' }, unread: 0 } : 
-        group
-      ));
-    } else if (activeChat.type === 'channel') {
-      // Only admins can typically post in channels, but for demo we allow it
-      setChannels(prev => prev.map(channel => 
-        channel.id === activeChat.id ? 
-        { ...channel, lastMessage: { text: message, time: 'Just now', sender: 'You' }, unread: 0 } : 
-        channel
-      ));
-    }
-
     setMessage('');
+    setReplyingTo(null);
   };
 
-  // Create a new group
-  const handleCreateGroup = () => {
-    if (!newGroupName.trim()) return;
-    
-    const newGroup = {
-      id: groups.length + 1,
-      name: newGroupName,
-      avatar: '/api/placeholder/40/40',
-      type: 'group',
-      unread: 0,
-      lastMessage: { text: 'Group created', time: 'Just now', sender: 'You' }
-    };
-    
-    setGroups(prev => [...prev, newGroup]);
-    setNewGroupName('');
-    setNewGroupModal(false);
+  const handleEmojiSelect = (emoji) => {
+    setMessage(prev => prev + emoji.native);
   };
 
-  // Create a new channel
-  const handleCreateChannel = () => {
-    if (!newChannelName.trim()) return;
-    
-    const newChannel = {
-      id: channels.length + 1,
-      name: newChannelName,
-      avatar: '/api/placeholder/40/40',
-      type: 'channel',
-      unread: 0,
-      lastMessage: { text: 'Channel created', time: 'Just now', sender: 'You' }
-    };
-    
-    setChannels(prev => [...prev, newChannel]);
-    setNewChannelName('');
-    setNewChannelModal(false);
-  };
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  // Filter chats based on search term
-  const filteredChats = () => {
-    if (!searchTerm) {
-      if (activeTab === 'chats') {
-        return [...privateChats, ...groups];
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newMessage = {
+          id: Date.now(),
+          type: 'image',
+          url: e.target.result,
+          sender: 'You',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          reactions: []
+        };
+        setChatMessages(prev => ({
+          ...prev,
+          [selectedChat]: [...(prev[selectedChat] || []), newMessage]
+        }));
+      };
+      reader.readAsDataURL(file);
       } else {
-        return channels;
-      }
-    }
-
-    const term = searchTerm.toLowerCase();
-    
-    if (activeTab === 'chats') {
-      const filteredPrivate = privateChats.filter(chat => 
-        chat.user.name.toLowerCase().includes(term) || 
-        (chat.lastMessage && chat.lastMessage.text.toLowerCase().includes(term))
-      );
-      
-      const filteredGroups = groups.filter(group => 
-        group.name.toLowerCase().includes(term) || 
-        (group.lastMessage && group.lastMessage.text.toLowerCase().includes(term))
-      );
-      
-      return [...filteredPrivate, ...filteredGroups];
-    } else {
-      return channels.filter(channel => 
-        channel.name.toLowerCase().includes(term) || 
-        (channel.lastMessage && channel.lastMessage.text.toLowerCase().includes(term))
-      );
+      const newMessage = {
+        id: Date.now(),
+        type: 'file',
+        fileName: file.name,
+        fileSize: file.size,
+        sender: 'You',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        reactions: []
+      };
+      setChatMessages(prev => ({
+        ...prev,
+        [selectedChat]: [...(prev[selectedChat] || []), newMessage]
+      }));
     }
   };
 
-  // Load chat history from localStorage on component mount
-  useEffect(() => {
-    const savedMessages = localStorage.getItem('bookClubMessages');
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-    
-    const savedPrivateChats = localStorage.getItem('bookClubPrivateChats');
-    if (savedPrivateChats) {
-      setPrivateChats(JSON.parse(savedPrivateChats));
-    }
-    
-    const savedGroups = localStorage.getItem('bookClubGroups');
-    if (savedGroups) {
-      setGroups(JSON.parse(savedGroups));
-    }
-    
-    const savedChannels = localStorage.getItem('bookClubChannels');
-    if (savedChannels) {
-      setChannels(JSON.parse(savedChannels));
-    }
-  }, []);
+  const handleReaction = (messageId, emoji) => {
+    setChatMessages(prev => ({
+      ...prev,
+      [selectedChat]: prev[selectedChat].map(msg => {
+        if (msg.id === messageId) {
+          const existingReaction = msg.reactions.find(r => r.emoji === emoji);
+          if (existingReaction) {
+            return {
+              ...msg,
+              reactions: msg.reactions.filter(r => r.emoji !== emoji)
+            };
+          }
+          return {
+            ...msg,
+            reactions: [...msg.reactions, { emoji, user: 'You' }]
+          };
+        }
+        return msg;
+      })
+    }));
+  };
 
-  // Save chat history to localStorage whenever messages change
-  useEffect(() => {
-    localStorage.setItem('bookClubMessages', JSON.stringify(messages));
-    localStorage.setItem('bookClubPrivateChats', JSON.stringify(privateChats));
-    localStorage.setItem('bookClubGroups', JSON.stringify(groups));
-    localStorage.setItem('bookClubChannels', JSON.stringify(channels));
-  }, [messages, privateChats, groups, channels]);
+  const handleCreatePoll = (question, options) => {
+    const newPoll = {
+      id: Date.now(),
+      type: 'poll',
+      question,
+      options: options.map(opt => ({ text: opt, votes: [] })),
+      sender: 'You',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: []
+    };
 
-  // Handler for selecting a chat
-  const handleSelectChat = (chat, type) => {
-    const newActiveChat = { ...chat, type };
-    setActiveChat(newActiveChat);
-    
-    // Mark as read
-    if (type === 'private') {
-      setPrivateChats(prev => prev.map(c => 
-        c.id === chat.id ? { ...c, unread: 0 } : c
-      ));
-    } else if (type === 'group') {
-      setGroups(prev => prev.map(g => 
-        g.id === chat.id ? { ...g, unread: 0 } : g
-      ));
-    } else if (type === 'channel') {
-      setChannels(prev => prev.map(c => 
-        c.id === chat.id ? { ...c, unread: 0 } : c
-      ));
+    setChatMessages(prev => ({
+      ...prev,
+      [selectedChat]: [...(prev[selectedChat] || []), newPoll]
+    }));
+    setShowPollModal(false);
+  };
+
+  const handleVote = (messageId, optionIndex) => {
+    setChatMessages(prev => ({
+      ...prev,
+      [selectedChat]: prev[selectedChat].map(msg => {
+        if (msg.id === messageId && msg.type === 'poll') {
+          const updatedOptions = [...msg.options];
+          // Remove vote from other options
+          updatedOptions.forEach(opt => {
+            opt.votes = opt.votes.filter(voter => voter !== 'You');
+          });
+          // Add vote to selected option
+          updatedOptions[optionIndex].votes.push('You');
+          return { ...msg, options: updatedOptions };
+        }
+        return msg;
+      })
+    }));
+  };
+
+  const handleLeaveGroup = (groupId) => {
+    setGroups(prev => ({
+      chats: prev.chats.map(g => {
+        if (g.id === groupId) {
+          return {
+            ...g,
+            members: g.members.map(m => 
+              m.name === "You" ? { ...m, active: false } : m
+            )
+          };
+        }
+        return g;
+      }),
+      communities: prev.communities.map(g => {
+        if (g.id === groupId) {
+          return {
+            ...g,
+            members: g.members.map(m => 
+              m.name === "You" ? { ...m, active: false } : m
+            )
+          };
+        }
+        return g;
+      })
+    }));
+  };
+
+  const handleDeleteGroup = (groupId) => {
+    setGroups(prev => ({
+      chats: prev.chats.filter(g => g.id !== groupId),
+      communities: prev.communities.filter(g => g.id !== groupId)
+    }));
+    setSelectedChat(null);
+  };
+
+  // Get current group
+  const getCurrentGroup = () => {
+    return [...groups.chats, ...groups.communities]
+      .find(g => g.name === selectedChat);
+  };
+
+  return (
+    <div className="community-container">
+      <div className="sidebar">
+        <div className="nav-tabs">
+          <div 
+            className={`nav-tab ${activeTab === 'chats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chats')}
+          >
+            Chats
+          </div>
+          <div 
+            className={`nav-tab ${activeTab === 'communities' ? 'active' : ''}`}
+            onClick={() => setActiveTab('communities')}
+          >
+            Communities
+          </div>
+        </div>
+
+        <div className="new-group">+ New Group</div>
+        
+        <div className="search-box">
+          <input 
+            type="text" 
+            className="search-input" 
+            placeholder="Search..." 
+          />
+        </div>
+
+        <div className="list-container">
+          {groups[activeTab === 'chats' ? 'chats' : 'communities'].map((group) => (
+            <div 
+              key={group.id} 
+              className={`list-item ${selectedChat === group.name ? 'active' : ''}`}
+              onClick={() => handleChatClick(group.name)}
+            >
+              <div className="list-item-avatar">
+                {group.image ? (
+                  <img src={group.image} alt={group.name} />
+                ) : (
+                  <div className="avatar-placeholder">
+                    {group.name.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="list-item-name">{group.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="chat-area">
+        {!selectedChat ? (
+          <div className="welcome-screen">
+            <h1>Welcome to Book Club Chat</h1>
+            <p>Select a chat to start messaging</p>
+          </div>
+        ) : (
+          <>
+            <ChatHeader 
+              selectedChat={selectedChat}
+              onShowDetails={() => setShowGroupDetails(true)}
+              groups={groups}
+            />
+            <div className="messages-container">
+              {chatMessages[selectedChat]?.map((msg) => (
+                <div key={msg.id} className={`message ${msg.sender === 'You' ? 'sent' : 'received'}`}>
+                  {msg.replyTo && (
+                    <div className="reply-to">
+                      <span className="reply-sender">{msg.replyTo.sender}</span>
+                      <span className="reply-text">{msg.replyTo.text}</span>
+                    </div>
+                  )}
+
+                  <div className="message-bubble">
+                    {msg.type === 'image' && (
+                      <img src={msg.url} alt="Shared" className="message-image" />
+                    )}
+
+                    {msg.type === 'file' && (
+                      <div className="file-attachment">
+                        <Paperclip size={16} />
+                        <span className="file-name">{msg.fileName}</span>
+                        <span className="file-size">
+                          ({(msg.fileSize / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                    )}
+
+                    {msg.type === 'poll' && (
+                      <PollMessage
+                        poll={msg}
+                        onVote={handleVote}
+                      />
+                    )}
+
+                    {msg.text && <div className="message-text">{msg.text}</div>}
+                    <div className="message-info">
+                      <span className="message-sender">{msg.sender}</span>
+                      <span className="message-time">{msg.time}</span>
+                    </div>
+                  </div>
+
+                  <div className="message-actions">
+                    <button 
+                      className="action-button"
+                      onClick={() => setReplyingTo(msg)}
+                    >
+                      <Reply size={16} />
+                    </button>
+                    <div className="reaction-buttons">
+                      {['👍', '❤️', '😄', '😮', '😢', '👏'].map(emoji => (
+                        <button
+                          key={emoji}
+                          className={`reaction-button ${msg.reactions.some(r => r.emoji === emoji) ? 'active' : ''}`}
+                          onClick={() => handleReaction(msg.id, emoji)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {msg.reactions.length > 0 && (
+                    <div className="message-reactions">
+                      {msg.reactions.map((reaction, index) => (
+                        <span key={index} className="reaction">
+                          {reaction.emoji}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {replyingTo && (
+              <div className="reply-container">
+                <div className="reply-preview">
+                  <span>Replying to {replyingTo.sender}</span>
+                  <p>{replyingTo.text}</p>
+                </div>
+                <button 
+                  className="cancel-reply"
+                  onClick={() => setReplyingTo(null)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {getCurrentGroup()?.members.find(m => m.name === "You")?.active ? (
+              <form className="input-container" onSubmit={handleSendMessage}>
+                <div className="input-actions">
+                  <button 
+                    type="button" 
+                    className="action-button"
+                    onClick={() => fileInputRef.current.click()}
+                  >
+                    <Paperclip size={20} />
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                    accept="image/*,.pdf,.doc,.docx"
+                  />
+                  <button 
+                    type="button" 
+                    className="action-button"
+                    onClick={() => setShowPollModal(true)}
+                  >
+                    <BarChart2 size={20} />
+                  </button>
+                  <button 
+                    type="button" 
+                    className="action-button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    <Smile size={20} />
+                  </button>
+                </div>
+                
+                <input
+                  type="text"
+                  className="message-input" 
+                  placeholder="Type a message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <button type="submit" className="send-button">
+                  <Send size={20} />
+                </button>
+              </form>
+            ) : (
+              <div className="left-group-message">
+                You can no longer send messages to this group
+              </div>
+            )}
+
+            {showEmojiPicker && (
+              <div className="emoji-picker-container">
+                <Picker
+                  data={data}
+                  onEmojiSelect={handleEmojiSelect}
+                  theme="dark"
+                />
+              </div>
+            )}
+
+            {/* Overlay when panel is open */}
+            <div className="panel-overlay" onClick={() => setShowGroupDetails(false)} />
+          </>
+        )}
+      </div>
+
+      {/* Group Details Panel */}
+      {showGroupDetails && selectedChat && (
+        <div className="group-details-panel">
+          <GroupDetailsPanel
+            group={getCurrentGroup()}
+            onClose={() => setShowGroupDetails(false)}
+            onUpdateGroup={handleUpdateGroup}
+            onLeaveGroup={handleLeaveGroup}
+            onDeleteGroup={handleDeleteGroup}
+          />
+        </div>
+      )}
+
+      {showPollModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <PollCreator
+              onSubmit={handleCreatePoll}
+              onClose={() => setShowPollModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <CreateGroupModal
+          type={activeTab === 'chats' ? 'Group' : 'Community'}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={(newGroup) => {
+            setGroups(prev => ({
+              ...prev,
+              [activeTab === 'chats' ? 'chats' : 'communities']: [...(prev[activeTab === 'chats' ? 'chats' : 'communities'] || []), newGroup]
+            }));
+            // Update chatMessages state to include the new group
+            setChatMessages(prev => ({
+              ...prev,
+              [newGroup.name]: []
+            }));
+          }}
+        />
+      )}
+
+      {showDetails && selectedGroupDetails && (
+        <div className="details-panel">
+          <GroupDetails
+            group={selectedGroupDetails}
+            onClose={() => setShowDetails(false)}
+            type={activeTab === 'chats' ? 'Group' : 'Community'}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ChatHeader = ({ selectedChat, onShowDetails, groups }) => {
+  const currentGroup = [...groups.chats, ...groups.communities]
+    .find(g => g.name === selectedChat);
+  
+  const userMember = currentGroup?.members.find(m => m.name === "You");
+  const isActive = userMember?.active;
+
+  return (
+    <div className="chat-header">
+      <div 
+        className="chat-header-content" 
+        onClick={isActive ? onShowDetails : null}
+        style={{ cursor: isActive ? 'pointer' : 'default' }}
+      >
+        <div className="chat-header-avatar">
+          {currentGroup?.image ? (
+            <img src={currentGroup.image} alt={currentGroup.name} />
+          ) : (
+            <div className="avatar-placeholder">
+              {currentGroup?.name.charAt(0)}
+            </div>
+          )}
+        </div>
+        <div className="chat-header-info">
+          <h2>{selectedChat}</h2>
+          <span className="member-count">
+            {currentGroup?.members.length} members
+            {!isActive && " • Left Group"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GroupDetailsPanel = ({ group, onClose, onUpdateGroup, onLeaveGroup, onDeleteGroup }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedGroup, setEditedGroup] = useState(group);
+  const fileInputRef = useRef(null);
+
+  const userMember = group.members.find(m => m.name === "You");
+  const isAdmin = userMember?.role === "admin";
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEditedGroup(prev => ({ ...prev, image: e.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setEditedGroup(prev => ({ ...prev, image: null }));
+  };
+
+  const handleSaveChanges = () => {
+    onUpdateGroup(editedGroup);
+    setIsEditing(false);
+  };
+
+  const handleLeaveGroup = () => {
+    if (window.confirm('Are you sure you want to leave this group?')) {
+      onLeaveGroup(group.id);
+      onClose();
+    }
+  };
+
+  const handleDeleteGroup = () => {
+    if (window.confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+      onDeleteGroup(group.id);
+      onClose();
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-800">Book Club</h2>
-            <div className="flex space-x-2">
-              <button className="text-gray-500 hover:text-gray-700">
-                <Settings size={20} />
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full pl-8 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute left-2 top-2.5 text-gray-400" size={18} />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            className={`flex-1 py-3 font-medium ${activeTab === 'chats' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveTab('chats')}
-          >
-            Chats
-          </button>
-          <button
-            className={`flex-1 py-3 font-medium ${activeTab === 'communities' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveTab('communities')}
-          >
-            Communities
-          </button>
-        </div>
-
-        {/* Chat/Community List */}
-        <div className="flex-1 overflow-y-auto">
-          {activeTab === 'chats' && (
-            <div>
-              {/* Add new group button */}
-              <div className="px-4 py-3 border-b border-gray-200">
-                <button 
-                  className="flex items-center text-blue-600 hover:text-blue-800"
-                  onClick={() => setNewGroupModal(true)}
-                >
-                  <Plus size={18} className="mr-2" />
-                  New Group
-                </button>
-              </div>
-
-              {/* Private chats */}
-              <div className="px-4 py-2 text-sm font-medium text-gray-500 uppercase">
-                Private Messages
-              </div>
-              {privateChats.map(chat => (
-                <div 
-                  key={`private-${chat.id}`}
-                  className={`px-4 py-3 flex items-center cursor-pointer hover:bg-gray-100 ${activeChat && activeChat.id === chat.id && activeChat.type === 'private' ? 'bg-blue-50' : ''}`}
-                  onClick={() => handleSelectChat(chat, 'private')}
-                >
-                  <div className="relative">
-                    <img src={chat.user.avatar} alt={chat.user.name} className="w-10 h-10 rounded-full" />
-                    <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${chat.user.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">{chat.user.name}</span>
-                      <span className="text-xs text-gray-500">{chat.lastMessage?.time}</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-sm text-gray-600 truncate">{chat.lastMessage?.text}</p>
-                      {chat.unread > 0 && (
-                        <span className="ml-2 bg-blue-600 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
-                          {chat.unread}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Groups */}
-              <div className="px-4 py-2 text-sm font-medium text-gray-500 uppercase mt-4">
-                Groups
-              </div>
-              {groups.map(group => (
-                <div 
-                  key={`group-${group.id}`}
-                  className={`px-4 py-3 flex items-center cursor-pointer hover:bg-gray-100 ${activeChat && activeChat.id === group.id && activeChat.type === 'group' ? 'bg-blue-50' : ''}`}
-                  onClick={() => handleSelectChat(group, 'group')}
-                >
-                  <div className="relative">
-                    <img src={group.avatar} alt={group.name} className="w-10 h-10 rounded-full" />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-blue-500"></span>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">{group.name}</span>
-                      <span className="text-xs text-gray-500">{group.lastMessage?.time}</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-sm text-gray-600 truncate">
-                        <span className="font-medium">{group.lastMessage?.sender}: </span>
-                        {group.lastMessage?.text}
-                      </p>
-                      {group.unread > 0 && (
-                        <span className="ml-2 bg-blue-600 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
-                          {group.unread}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'communities' && (
-            <div>
-              {/* Add new channel button */}
-              <div className="px-4 py-3 border-b border-gray-200">
-                <button 
-                  className="flex items-center text-blue-600 hover:text-blue-800"
-                  onClick={() => setNewChannelModal(true)}
-                >
-                  <Plus size={18} className="mr-2" />
-                  New Channel
-                </button>
-              </div>
-
-              {/* Channels */}
-              <div className="px-4 py-2 text-sm font-medium text-gray-500 uppercase">
-                Channels
-              </div>
-              {channels.map(channel => (
-                <div 
-                  key={`channel-${channel.id}`}
-                  className={`px-4 py-3 flex items-center cursor-pointer hover:bg-gray-100 ${activeChat && activeChat.id === channel.id && activeChat.type === 'channel' ? 'bg-blue-50' : ''}`}
-                  onClick={() => handleSelectChat(channel, 'channel')}
-                >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-500">
-                    <Hash size={20} />
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">{channel.name}</span>
-                      <span className="text-xs text-gray-500">{channel.lastMessage?.time}</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-sm text-gray-600 truncate">
-                        <span className="font-medium">{channel.lastMessage?.sender}: </span>
-                        {channel.lastMessage?.text}
-                      </p>
-                      {channel.unread > 0 && (
-                        <span className="ml-2 bg-blue-600 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
-                          {channel.unread}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="group-details-panel">
+      <div className="panel-header">
+        <h2>Group Info</h2>
+        <button className="close-button" onClick={onClose}>
+          <X size={20} />
+        </button>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {activeChat ? (
-          <>
-            {/* Chat Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white">
-              <div className="flex items-center">
-                {activeChat.type === 'private' ? (
-                  <img src={activeChat.user.avatar} alt={activeChat.user.name} className="w-10 h-10 rounded-full" />
-                ) : activeChat.type === 'group' ? (
-                  <img src={activeChat.avatar} alt={activeChat.name} className="w-10 h-10 rounded-full" />
-                ) : (
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-500">
-                    <Hash size={20} />
-                  </div>
-                )}
-                <div className="ml-3">
-                  <h3 className="font-semibold text-gray-900">
-                    {activeChat.type === 'private' ? activeChat.user.name : activeChat.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {activeChat.type === 'private' ? 
-                      activeChat.user.status === 'online' ? 'Online' : 'Offline' : 
-                      activeChat.type === 'group' ? 'Group' : 'Channel'
-                    }
-                  </p>
-                </div>
+      <div className="panel-content">
+        <div className="group-image-section">
+          <div className="group-image">
+            {editedGroup.image ? (
+              <img src={editedGroup.image} alt={editedGroup.name} />
+            ) : (
+              <div className="image-placeholder">
+                {editedGroup.name.charAt(0)}
               </div>
-              <div className="flex items-center space-x-3 text-gray-500">
-                <button className="hover:text-gray-700">
-                  <Search size={20} />
+            )}
+            {isEditing && (
+              <div className="image-actions">
+                <button onClick={() => fileInputRef.current.click()}>
+                  Change Photo
                 </button>
-                <button className="hover:text-gray-700">
-                  <Bell size={20} />
-                </button>
-                {activeChat.type === 'group' && (
-                  <button className="hover:text-gray-700">
-                    <Users size={20} />
+                {editedGroup.image && (
+                  <button onClick={handleRemoveImage}>
+                    Remove Photo
                   </button>
                 )}
               </div>
-            </div>
+            )}
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+        </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-              {activeChat.type === 'private' && messages[`private-${activeChat.id}`] ? (
-                messages[`private-${activeChat.id}`].map(msg => (
-                  <div key={msg.id} className={`mb-4 flex ${msg.sender.id === 0 ? 'justify-end' : 'justify-start'}`}>
-                    {msg.sender.id !== 0 && (
-                      <img src={activeChat.user.avatar} alt={msg.sender.name} className="w-8 h-8 rounded-full mr-2" />
-                    )}
-                    <div className={`max-w-xs p-3 rounded-lg ${msg.sender.id === 0 ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} shadow`}>
-                      <p>{msg.text}</p>
-                      <div className={`text-xs mt-1 ${msg.sender.id === 0 ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {msg.time}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : activeChat.type === 'group' && messages[`group-${activeChat.id}`] ? (
-                messages[`group-${activeChat.id}`].map(msg => (
-                  <div key={msg.id} className={`mb-4 flex ${msg.sender.id === 0 ? 'justify-end' : 'justify-start'}`}>
-                    {msg.sender.id !== 0 && (
-                      <img src={msg.sender.avatar || '/api/placeholder/40/40'} alt={msg.sender.name} className="w-8 h-8 rounded-full mr-2" />
-                    )}
-                    <div className={`max-w-xs p-3 rounded-lg ${msg.sender.id === 0 ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} shadow`}>
-                      {msg.sender.id !== 0 && (
-                        <p className="font-medium text-xs mb-1">{msg.sender.name}</p>
-                      )}
-                      <p>{msg.text}</p>
-                      <div className={`text-xs mt-1 ${msg.sender.id === 0 ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {msg.time}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : activeChat.type === 'channel' && messages[`channel-${activeChat.id}`] ? (
-                messages[`channel-${activeChat.id}`].map(msg => (
-                  <div key={msg.id} className={`mb-4 flex ${msg.sender.id === 0 ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs p-3 rounded-lg ${msg.sender.id === 0 ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} shadow`}>
-                      <p className="font-medium text-xs mb-1">{msg.sender.name}</p>
-                      <p>{msg.text}</p>
-                      <div className={`text-xs mt-1 ${msg.sender.id === 0 ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {msg.time}
-                      </div>
-                    </div>
-                  </div>
-                ))
+        <div className="group-info-section">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editedGroup.name}
+              onChange={(e) => setEditedGroup(prev => ({ ...prev, name: e.target.value }))}
+              className="edit-input"
+            />
+          ) : (
+            <h3>{group.name}</h3>
+          )}
+
+          {isEditing ? (
+            <textarea
+              value={editedGroup.description}
+              onChange={(e) => setEditedGroup(prev => ({ ...prev, description: e.target.value }))}
+              className="edit-input"
+              rows={3}
+            />
+          ) : (
+            <p className="description">{group.description}</p>
+          )}
+        </div>
+
+        <div className="members-section">
+          <div className="section-header">
+            <h3>Members</h3>
+            {group.members.find(m => m.role === 'admin')?.name === 'You' && (
+              <button className="add-member-button">
+                Add Member
+              </button>
+            )}
+          </div>
+          <div className="members-list">
+            {group.members.map(member => (
+              <div key={member.id} className="member-item">
+                <div className="member-avatar">
+                  {member.name.charAt(0)}
+                </div>
+                <div className="member-info">
+                  <span className="member-name">{member.name}</span>
+                  <span className="member-role">{member.role}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="group-actions">
+          {isAdmin ? (
+            <>
+              {isEditing ? (
+                <>
+                  <button className="cancel-button" onClick={() => setIsEditing(false)}>
+                    Cancel
+                  </button>
+                  <button className="save-button" onClick={handleSaveChanges}>
+                    Save Changes
+                  </button>
+                </>
               ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  No messages yet
+                <>
+                  <button className="edit-button" onClick={() => setIsEditing(true)}>
+                    Edit Group
+                  </button>
+                  <button className="delete-button" onClick={handleDeleteGroup}>
+                    Delete Group
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <button className="leave-button" onClick={handleLeaveGroup}>
+              Leave Group
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PollCreator = ({ onSubmit, onClose }) => {
+  const [question, setQuestion] = useState('');
+  const [options, setOptions] = useState(['', '']);
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!question.trim()) {
+      setError('Please enter a question');
+      return;
+    }
+    if (options.filter(opt => opt.trim()).length < 2) {
+      setError('Please enter at least 2 options');
+      return;
+    }
+    onSubmit(question, options.filter(opt => opt.trim()));
+  };
+
+  const addOption = () => {
+    if (options.length < 6) {
+      setOptions([...options, '']);
+    }
+  };
+
+  const removeOption = (index) => {
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== index));
+    }
+  };
+
+  return (
+    <div className="poll-creator">
+      <div className="poll-creator-header">
+        <h3>Create a Poll</h3>
+        <button onClick={onClose} className="close-button">
+          <X size={20} />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="poll-input-group">
+          <label>Question</label>
+          <input
+            type="text"
+            placeholder="Ask your question..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            className="poll-input question-input"
+          />
+        </div>
+
+        <div className="poll-options-container">
+          <label>Options</label>
+          {options.map((option, index) => (
+            <div key={index} className="poll-option-input">
+              <input
+                type="text"
+                placeholder={`Option ${index + 1}`}
+                value={option}
+                onChange={(e) => {
+                  const newOptions = [...options];
+                  newOptions[index] = e.target.value;
+                  setOptions(newOptions);
+                }}
+                className="poll-input"
+              />
+              {options.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => removeOption(index)}
+                  className="remove-option-button"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {options.length < 6 && (
+          <button
+            type="button"
+            onClick={addOption}
+            className="add-option-button"
+          >
+            + Add Option
+          </button>
+        )}
+
+        {error && <div className="poll-error">{error}</div>}
+
+        <div className="poll-creator-footer">
+          <button type="button" onClick={onClose} className="cancel-button">
+            Cancel
+          </button>
+          <button type="submit" className="create-button">
+            Create Poll
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const PollMessage = ({ poll, onVote }) => {
+  const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+
+  return (
+    <div className="poll-container">
+      <div className="poll-question">
+        <h4>{poll.question}</h4>
+        <span className="total-votes">{totalVotes} votes</span>
+      </div>
+      
+      <div className="poll-options">
+        {poll.options.map((option, index) => {
+          const percentage = totalVotes ? (option.votes.length / totalVotes) * 100 : 0;
+          const hasVoted = option.votes.includes('You');
+          
+          return (
+            <div key={index} className="poll-option">
+              <button
+                onClick={() => onVote(poll.id, index)}
+                className={`poll-vote-button ${hasVoted ? 'voted' : ''}`}
+                disabled={poll.options.some(opt => opt.votes.includes('You'))}
+              >
+                <div className="poll-option-content">
+                  <span className="option-text">{option.text}</span>
+                  <span className="vote-percentage">{Math.round(percentage)}%</span>
+                </div>
+                <div 
+                  className="vote-progress-bar"
+                  style={{ width: `${percentage}%` }}
+                />
+              </button>
+              {hasVoted && <span className="your-vote">Your vote</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CreateGroupModal = ({ onClose, onSubmit, type }) => {
+  const [groupData, setGroupData] = useState({
+    name: '',
+    description: '',
+    image: null
+  });
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5000000) { // 5MB limit
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setGroupData(prev => ({ ...prev, image: e.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!groupData.name.trim()) {
+      setError('Please enter a name');
+      return;
+    }
+    onSubmit({
+      ...groupData,
+      id: Date.now(),
+      members: 1
+    });
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="create-group-modal">
+        <div className="modal-header">
+          <h3>Create New {type}</h3>
+          <button className="close-button" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="group-image-upload">
+            <div 
+              className="image-preview"
+              onClick={() => fileInputRef.current.click()}
+            >
+              {groupData.image ? (
+                <img src={groupData.image} alt="Group" />
+              ) : (
+                <div className="upload-placeholder">
+                  <Upload size={24} />
+                  <span>Upload Image</span>
                 </div>
               )}
             </div>
-
-            {/* Message Input */}
-            <div className="border-t border-gray-200 bg-white p-4">
-              <div className="flex items-center">
-                <button className="text-gray-500 hover:text-gray-700 mx-2">
-                  <Paperclip size={20} />
-                </button>
-                <button className="text-gray-500 hover:text-gray-700 mx-2">
-                  <Image size={20} />
-                </button>
-                <button className="text-gray-500 hover:text-gray-700 mx-2">
-                  <Smile size={20} />
-                </button>
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  className="flex-1 mx-2 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
-                <button
-                  className="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 focus:outline-none"onClick={handleSendMessage}>
-                  <Send size={18} />
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50 text-gray-500">
-            <div className="text-center">
-              <MessageSquare size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-medium mb-2">Welcome to Book Club Chat</h3>
-              <p className="text-gray-400">Select a chat to start messaging</p>
-            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
           </div>
+
+          <div className="input-group">
+            <label>Name</label>
+            <input
+              type="text"
+              placeholder={`${type} name`}
+              value={groupData.name}
+              onChange={(e) => setGroupData(prev => ({ ...prev, name: e.target.value }))}
+              className="group-input"
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Description</label>
+            <textarea
+              placeholder={`Describe your ${type.toLowerCase()}`}
+              value={groupData.description}
+              onChange={(e) => setGroupData(prev => ({ ...prev, description: e.target.value }))}
+              className="group-input"
+              rows={3}
+            />
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="modal-footer">
+            <button type="button" className="cancel-button" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="create-button">
+              Create {type}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const GroupDetails = ({ group, onClose, type }) => {
+  return (
+    <div className="group-details">
+      <div className="details-header">
+        <button className="back-button" onClick={onClose}>
+          <ChevronRight size={24} />
+        </button>
+        <h2>{group.name}</h2>
+        {group.members.find(m => m.role === "admin")?.name === "You" && (
+          <button className="settings-button">
+            <Settings size={20} />
+          </button>
         )}
       </div>
 
-      {/* New Group Modal */}
-      {newGroupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-xl font-semibold mb-4">Create New Group</h3>
-            <input
-              type="text"
-              placeholder="Group name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-            />
-            <div className="mt-6 flex justify-end space-x-3">
-              <button 
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50" onClick={() => setNewGroupModal(false)}>
-                Cancel</button>
-              <button 
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleCreateGroup}>
-                Create</button>
+      <div className="details-content">
+        <div className="group-avatar">
+          {group.image ? (
+            <img src={group.image} alt={group.name} />
+          ) : (
+            <div className="avatar-placeholder">
+              {group.name.charAt(0)}
             </div>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* New Channel Modal */}
-      {newChannelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-xl font-semibold mb-4">Create New Channel</h3>
-            <input
-              type="text"
-              placeholder="Channel name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              value={newChannelName}
-              onChange={(e) => setNewChannelName(e.target.value)}
-            />
-            <div className="mt-6 flex justify-end space-x-3">
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"onClick={() => setNewChannelModal(false)}>
-                Cancel</button>
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleCreateChannel}>
-                Create</button>
-            </div>
+        <div className="group-info">
+          <h3>About {type}</h3>
+          <p className="description">{group.description}</p>
+          <div className="info-item">
+            <Users size={16} />
+            <span>{group.members.length} members</span>
+          </div>
+          <div className="info-item">
+            <Calendar size={16} />
+            <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
-      )}
+
+        <div className="members-section">
+          <h3>Members</h3>
+          <div className="members-list">
+            {group.members.map(member => (
+              <div key={member.id} className="member-item">
+                <div className="member-avatar">
+                  {member.name.charAt(0)}
+                </div>
+                <div className="member-info">
+                  <span className="member-name">{member.name}</span>
+                  <span className="member-role">{member.role}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
