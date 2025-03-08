@@ -1,14 +1,15 @@
 import React from 'react';
+import { Outlet } from 'react-router-dom';
 import Navbar from '../nav/nav';
-import './layout.css';  // Create this file
+import './layout.css'; 
 
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="app-container">
+    <div className="layout-container">
       <Navbar />
-      <main className="main-content">
-        {children}
-      </main>
+      <div className="content-container">
+        <Outlet />
+      </div>
     </div>
   );
 };

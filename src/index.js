@@ -1,10 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context.js';
+import { AppProvider, useGlobalContext } from './context.js';
 import Layout from './comp/layout/layout';
 import './index.css';
-import Home from './pages/Home/Home';
 import MainHome from './MainHomeComp/frontend/MainHome';
 import BookList from "./Components/BookList/BookList";
 import BookDetails from "./Components/BookDetails/BookDetails";
@@ -28,33 +27,21 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <AppProvider>
     <BrowserRouter>
-    <Layout>
-          <Routes>
-            {/* Authentication Routes */}
-            <Route path="/login" element={<AuthPage initialView="login" />} />
-             <Route path="/register" element={<AuthPage initialView="register" />} />
-            
-            {/* Main Routes */}
-            <Route path="/" element={<MainHome />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/book" element={<BookList />} />
-            <Route path="/book/:id" element={<BookDetails />} />
-            
-            {/* Community Routes - Protected */}
-            <Route path="/Community" element={
-                <Community />
-            } />
-            
-            {/* Create Profile Route - Directed after Registration */}
-            <Route path="/Community/Create-Profile" element={
-                <CreateProfile />
-            } />
-            
-            <Route path="/Community/profile" element={
-                <ProfileCard />
-            } />
-          </Routes>
-          </Layout>
+      <Routes>
+        {/* MainHome will have its own navbar */}
+        <Route path="/" element={<MainHome />} />
+        
+        {/* All other routes will use the Layout with navbar */}
+        <Route element={<Layout />}>
+          <Route path="/login" element={<AuthPage initialView="login" />} />
+          <Route path="/register" element={<AuthPage initialView="register" />} />
+          <Route path="/book" element={<BookList />} />
+          <Route path="/book/:id" element={<BookDetails />} />
+          <Route path="/Community" element={<Community />} />
+          <Route path="/Community/Create-Profile" element={<CreateProfile />} />
+          <Route path="/Community/profile" element={<ProfileCard />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   </AppProvider>
 );

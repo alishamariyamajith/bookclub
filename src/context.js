@@ -1,68 +1,81 @@
 import React, {useState, useContext, useEffect} from 'react';
-import { useCallback } from 'react';
-const URL = "http://openlibrary.org/search.json?title=";
+import coverImg from "./images/cover_not_found.jpg"; // Import the fallback image
+
 const AppContext = React.createContext();
+const URL = "https://www.googleapis.com/books/v1/volumes?q=";
 
 const AppProvider = ({children}) => {
-    const [searchTerm, setSearchTerm] = useState("the lost world");
+    const [searchTerm, setSearchTerm] = useState("");
     const [books, setBooks] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [resultTitle, setResultTitle] = useState("");
 
-    const fetchBooks = useCallback(async() => {
-        setLoading(true);
-        try{
-            const response = await fetch(`${URL}${searchTerm}`);
-            const data = await response.json();
-            const {docs} = data;
-
-            if(docs){
-                const newBooks = docs.slice(0, 20).map((bookSingle) => {
-                    const {key, author_name, cover_i, edition_count, first_publish_year, title} = bookSingle;
-
-                    return {
-                        id: key,
-                        author: author_name,
-                        cover_id: cover_i,
-                        edition_count: edition_count,
-                        first_publish_year: first_publish_year,
-                        title: title
-                    }
-                });
-
-                setBooks(newBooks);
-
-                if(newBooks.length > 1){
-                    setResultTitle("Your Search Result");
-                } else {
-                    setResultTitle("No Search Result Found!")
-                }
-            } else {
-                setBooks([]);
-                setResultTitle("No Search Result Found!");
-            }
-            setLoading(false);
-        } catch(error){
-            console.log(error);
-            setLoading(false);
-        }
-    }, [searchTerm]);
-
     useEffect(() => {
-        fetchBooks();
-    }, [searchTerm, fetchBooks]);
+        const fetchBooks = async () => {
+            if (!searchTerm) return;
+            
+            setLoading(true);
+            try {
+                const response = await fetch(`${URL}${searchTerm}`);
+                const data = await response.json();
+                
+                if (data.items) {
+                    const newBooks = data.items.map((item) => {
+                        const { volumeInfo } = item;
+                        return {
+                            id: item.id,
+                            title: volumeInfo.title || "No Title",
+                            author: volumeInfo.authors ? volumeInfo.authors.join(", ") : "No author listed",
+                            cover_img: volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || '/images/cover_not_found.jpg',
+                            published: volumeInfo.publishedDate || "N/A",
+                            description: volumeInfo.description || "No description available",
+                            rating: volumeInfo.averageRating || 0,
+                            ratingsCount: volumeInfo.ratingsCount || 0
+                        };
+                    });
+
+                    setBooks(newBooks);
+                    setResultTitle(`Search results for "${searchTerm}"`);
+                } else {
+                    setBooks([]);
+                    setResultTitle("No Books Found!");
+                }
+            } catch (error) {
+                console.error('Error fetching books:', error);
+                setBooks([]);
+                setResultTitle("Error fetching books. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Add debounce to prevent too many API calls
+        const timeoutId = setTimeout(() => {
+            fetchBooks();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
     return (
         <AppContext.Provider value = {{
-            loading, books, setSearchTerm, resultTitle, setResultTitle,
+            loading, 
+            books, 
+            setSearchTerm, 
+            resultTitle, 
+            setResultTitle,
         }}>
             {children}
         </AppContext.Provider>
     )
 }
 
-export const useGlobalContext = () => {
-    return useContext(AppContext);
+const useGlobalContext = () => {
+    const context = useContext(AppContext);
+    if (!context) {
+        throw new Error('useGlobalContext must be used within an AppProvider');
+    }
+    return context;
 }
 
-export {AppContext, AppProvider};
+export {AppContext, AppProvider, useGlobalContext};

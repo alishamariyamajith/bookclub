@@ -1,17 +1,12 @@
 header {
-  width: 100%;
-  height: 100px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 99;
-  box-shadow: 0 0 10px #000;
-  background: rgba(0,0,0,0.5);
-  padding: 15px;
+  height: 60px;
+  background: var(--dark-color);
+  z-index: 1000;
+  width: 100%;
 }
 
 .logo {
@@ -176,5 +171,69 @@ header {
   .dropdown_menu {
     left: 2rem;
     width: unset;
+  }
+}
+
+/* Add to your existing nav.css */
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-toggle {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.filter-toggle:hover {
+  color: var(--purple-color);
+}
+
+.search-filters {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 0.5rem;
+  z-index: 1000;
+}
+
+.filter-group {
+  margin-bottom: 0.8rem;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.filter-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .search-filters {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 1rem 1rem 0 0;
+    padding: 1.5rem;
   }
 }

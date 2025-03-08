@@ -1,37 +1,66 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import "./BookList.css";
+import React, { useState } from 'react';
+import { FaStar } from 'react-icons/fa';
+import BookPreview from '../BookPreview/BookPreview';
+import './BookList.css';
 
-const Book = (book) => {
+const Book = ({ id, cover_img, title, author, published, rating = 0 }) => {
+  const [imgError, setImgError] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <div className='book-item flex flex-column flex-sb'>
-      <div className='book-item-img'>
-        <img src = {book.cover_img} alt = "cover" />
-      </div>
-      <div className='book-item-info text-center'>
-        <Link to = {`/book/${book.id}`} {...book}>
-          <div className='book-item-info-item title fw-7 fs-18'>
-            <span>{book.title}</span>
+    <>
+      <div className="book-card-wrapper">
+        <div 
+          className={`book-card ${isHovered ? 'hovered' : ''}`}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onClick={() => setShowPreview(true)}
+        >
+          <div className="book-card-image">
+            <img 
+              src={imgError ? '/images/cover_not_found.jpg' : cover_img}
+              alt={title}
+              onError={() => setImgError(true)}
+            />
+            <div className="book-card-overlay">
+              <button className="preview-btn">Preview Book</button>
+            </div>
           </div>
-        </Link>
-
-        <div className='book-item-info-item author fs-15'>
-          <span className='text-capitalize fw-7'>Author: </span>
-          <span>{book.author.join(", ")}</span>
-        </div>
-
-        <div className='book-item-info-item edition-count fs-15'>
-          <span className='text-capitalize fw-7'>Total Editions: </span>
-          <span>{book.edition_count}</span>
-        </div>
-
-        <div className='book-item-info-item publish-year fs-15'>
-          <span className='text-capitalize fw-7'>First Publish Year: </span>
-          <span>{book.first_publish_year}</span>
+          
+          <div className="book-card-content">
+            <h3 className="book-card-title">{title}</h3>
+            <p className="book-card-author">by {author}</p>
+            
+            <div className="book-card-details">
+              <div className="book-card-rating">
+                {[...Array(5)].map((_, index) => (
+                  <FaStar
+                    key={index}
+                    className={index < Math.floor(rating) ? 'star-filled' : 'star-empty'}
+                  />
+                ))}
+              </div>
+              <p className="book-card-published">Published: {published}</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default Book
+      {/* Book Preview Modal */}
+      {showPreview && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <BookPreview 
+              bookId={id}
+              bookTitle={title}
+              onClose={() => setShowPreview(false)}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default Book;

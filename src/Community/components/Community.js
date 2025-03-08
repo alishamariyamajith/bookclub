@@ -291,7 +291,7 @@ const Community = () => {
             className="search-input" 
             placeholder="Search..." 
           />
-        </div>
+              </div>
 
         <div className="list-container">
           {groups[activeTab === 'chats' ? 'chats' : 'communities'].map((group) => (
@@ -384,7 +384,7 @@ const Community = () => {
                           {emoji}
                         </button>
                       ))}
-                    </div>
+              </div>
                   </div>
 
                   {msg.reactions.length > 0 && (
@@ -445,9 +445,9 @@ const Community = () => {
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   >
                     <Smile size={20} />
-                  </button>
-                </div>
-                
+                </button>
+              </div>
+
                 <input
                   type="text"
                   className="message-input" 
@@ -472,14 +472,14 @@ const Community = () => {
                   onEmojiSelect={handleEmojiSelect}
                   theme="dark"
                 />
-              </div>
+                  </div>
             )}
 
             {/* Overlay when panel is open */}
             <div className="panel-overlay" onClick={() => setShowGroupDetails(false)} />
           </>
-        )}
-      </div>
+                      )}
+                    </div>
 
       {/* Group Details Panel */}
       {showGroupDetails && selectedChat && (
@@ -501,8 +501,8 @@ const Community = () => {
               onSubmit={handleCreatePoll}
               onClose={() => setShowPollModal(false)}
             />
-          </div>
-        </div>
+                  </div>
+                </div>
       )}
 
       {showCreateModal && (
@@ -567,7 +567,7 @@ const ChatHeader = ({ selectedChat, onShowDetails, groups }) => {
           </span>
         </div>
       </div>
-    </div>
+                  </div>
   );
 };
 
@@ -620,7 +620,7 @@ const GroupDetailsPanel = ({ group, onClose, onUpdateGroup, onLeaveGroup, onDele
         <button className="close-button" onClick={onClose}>
           <X size={20} />
         </button>
-      </div>
+                </div>
 
       <div className="panel-content">
         <div className="group-image-section">
@@ -652,7 +652,7 @@ const GroupDetailsPanel = ({ group, onClose, onUpdateGroup, onLeaveGroup, onDele
             accept="image/*"
             style={{ display: 'none' }}
           />
-        </div>
+            </div>
 
         <div className="group-info-section">
           {isEditing ? (
@@ -676,7 +676,7 @@ const GroupDetailsPanel = ({ group, onClose, onUpdateGroup, onLeaveGroup, onDele
           ) : (
             <p className="description">{group.description}</p>
           )}
-        </div>
+                      </div>
 
         <div className="members-section">
           <div className="section-header">
@@ -686,21 +686,21 @@ const GroupDetailsPanel = ({ group, onClose, onUpdateGroup, onLeaveGroup, onDele
                 Add Member
               </button>
             )}
-          </div>
+                    </div>
           <div className="members-list">
             {group.members.map(member => (
               <div key={member.id} className="member-item">
                 <div className="member-avatar">
                   {member.name.charAt(0)}
-                </div>
+                  </div>
                 <div className="member-info">
                   <span className="member-name">{member.name}</span>
                   <span className="member-role">{member.role}</span>
-                </div>
-              </div>
+                      </div>
+                    </div>
             ))}
-          </div>
-        </div>
+                      </div>
+                    </div>
 
         <div className="group-actions">
           {isAdmin ? (
@@ -785,14 +785,14 @@ const PollCreator = ({ onSubmit, onClose }) => {
             onChange={(e) => setQuestion(e.target.value)}
             className="poll-input question-input"
           />
-        </div>
+            </div>
 
         <div className="poll-options-container">
           <label>Options</label>
           {options.map((option, index) => (
             <div key={index} className="poll-option-input">
-              <input
-                type="text"
+                <input
+                  type="text"
                 placeholder={`Option ${index + 1}`}
                 value={option}
                 onChange={(e) => {
@@ -813,7 +813,7 @@ const PollCreator = ({ onSubmit, onClose }) => {
               )}
             </div>
           ))}
-        </div>
+            </div>
 
         {options.length < 6 && (
           <button
@@ -849,7 +849,7 @@ const PollMessage = ({ poll, onVote }) => {
         <h4>{poll.question}</h4>
         <span className="total-votes">{totalVotes} votes</span>
       </div>
-      
+
       <div className="poll-options">
         {poll.options.map((option, index) => {
           const percentage = totalVotes ? (option.votes.length / totalVotes) * 100 : 0;
